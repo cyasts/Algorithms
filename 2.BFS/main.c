@@ -3,6 +3,7 @@
 #include <string.h>
 
 typedef struct edge{
+	int lineno;
 	int weight;
 	struct edge * nextedge;
 	struct vertex * adjtex;
@@ -11,7 +12,8 @@ typedef struct edge{
 typedef struct vertex {
 	char site[20];
 	struct edge * firstedge;
-	struct vertex * shortpathver;
+	struct vertex * prev;
+	int dist;
 	int isdiscovered;
 } vertex;
 
@@ -24,15 +26,16 @@ typedef struct {
 char  line[300][20];		//station name 
 vertex * station[300]; 	 	//station pointer 
 
-
 //function declare
 graph * input(); 
 void BFS(graph * g, vertex * src, vertex * desc);
+void dijkstra(graph * g, vertex * src);
 void cleartags(graph * g);
 int isexist(const char * sta, int k);
 vertex * findvertexbyname(graph * g, const char * name);
+vertex * findmindist(graph * g);
 int buildedge(vertex * from, vertex * to, int lineno);
-void makeundiscoverd();
+void printpath(graph * metro, vertex * desc);
 
 int main(int argc, char *argv[])
 {
@@ -55,7 +58,8 @@ freopen("output.txt", "w", stdout);
 	src = findvertexbyname(metro, s1);
     des = findvertexbyname(metro, s2);
 	
-	BFS(metro, src, des);
+	dijkstra(metro, src);
+	printpath(metro, des);
 	cleartags(metro);
 	
 fclose(stdin);
@@ -64,40 +68,31 @@ fclose(stdout);
 	return 0;	
 }
 
-//从顶点src出发，找到一条最短路径到达desc 
-void BFS(graph * g, vertex * src, vertex * desc)
+
+void dijkstra(graph * g, vertex * src)
 {
-	vertex * temsta[100];
-	vertex * v;
-	int head, tail;
-	head = tail = 0;
+	int i, k, alt;
+	vertex * u, *v;
 	edge * arc;
-	temsta[tail] = src;
-	tail = (tail+1) % 100;
-	src->isdiscovered = 1;
-	while(tail != head) {
-		v = temsta[head];
-		head = (head + 1) % 100;
-		if (v == desc) break;
-		arc = v->firstedge;
-		while(arc) {
-			if (arc->adjtex->isdiscovered == 0) {
-				arc->adjtex->shortpathver = v; //构建一条下一层子节点到当前节点的边 
-				temsta[tail] = arc->adjtex;
-				tail = (tail+1) % 100;
-				arc->adjtex->isdiscovered = 1;
+	for(i=0; i<g->vexnum; ++i) {
+		station[i]->dist = 999999999;
+		station[i]->prev = 0;
+	}
+	src->dist = 0;
+	while(k > 0) {
+		u = findmindist(g);
+		u->isdiscovered = 1;
+		arc = u->firstedge;
+		while (arc) {
+			v = arc->adjtex;
+			if (v->isdiscovered) continue;
+			alt = u->dist + arc->weight;
+			if (alt < v->dist) {
+				v->dist = alt;
+				v->prev = u;
 			}
 			arc = arc->nextedge;
 		}
-	}
-	v = desc;
-	tail = 0;//现在把temsta拿来当栈使用 
-	while(v) {//由于是反向构建的从desc到src的路径，需要全部压一次栈，逆转成从src到desc的路径 
-		temsta[tail++] = v;
-		v = v->shortpathver;
-	}
-	for(tail=tail-1; tail>=0; tail--) {
-		printf("%s\n", temsta[tail]);
 	}
 }
 
@@ -116,7 +111,8 @@ graph * input()
 	pretex = headtex = 0;
 	
 	metro = (graph *)malloc(sizeof(graph));
-	metro->vertices = metro->vexnum = metro->edgnum = 0;
+	metro->vertices = 0;
+	metro->vexnum = metro->edgnum = 0;
 	
 	while(gets(staname) != NULL) 
 	{
@@ -145,7 +141,7 @@ graph * input()
 				v = station[i];
 			}else {
 				v = (vertex *)malloc(sizeof(vertex));
-				v->firstedge = v->isdiscovered = v->shortpathver = 0;
+				v->firstedge = v->isdiscovered = v->prev = 0;
 				station[k] = v;
 				strcpy(line[k++], staname);
 				strcpy(v->site, staname);
@@ -179,7 +175,8 @@ int buildedge(vertex * from, vertex * to, int lineno)
 	arc->nextedge = from->firstedge;
 	from->firstedge = arc;
 	arc->adjtex = to;
-	arc->weight = lineno;
+	arc->lineno = lineno;
+	arc->weight = rand()%10+1;
 }
 
 vertex * findvertexbyname(graph * g, const char * name)
@@ -190,11 +187,43 @@ vertex * findvertexbyname(graph * g, const char * name)
 	}
 }
 
+vertex * findmindist(graph * g)
+{
+	int i;
+	int min = 999999;
+	int mini;
+	for (i=0; i<g->vexnum; ++i) {
+		if (station[i]->isdiscovered == 0) {
+			if (station[i]->dist < min) {
+				mini = i;
+				min = station[i]->dist;
+			}
+		}
+	}
+	return station[i];
+}
+
 void cleartags(graph * g)
 {
 	int i;
 	for(i=0; i<g->vexnum; ++i) {
 		station[i]->isdiscovered = 0;
-		station[i]->shortpathver = 0;
+		station[i]->prev = 0;
+	}
+}
+
+void printpath(graph * metro, vertex * desc)
+{
+	int i=0, leng=0;
+	vertex * sta[300];
+	vertex * v = desc;
+	while(v) {
+		sta[i++] = v;
+		v = v->prev;
+	}
+	
+	for(i--; i>=0; ++i){
+		leng += sta[i]->dist;
+		printf("%s %d", sta[i]->site, leng);
 	}
 }
