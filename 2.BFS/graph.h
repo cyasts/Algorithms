@@ -7,7 +7,7 @@
 
 typedef struct edge{
 	int weight;
-	int info;
+	int info; //线路名称 
 	struct edge * nextedge;
 	struct vertex * adjtex;
 } edge;
@@ -15,8 +15,8 @@ typedef struct edge{
 typedef struct vertex {
 	char site[20];
 	struct edge * firstedge;
-	struct vertex * prev;
-	int info;
+	struct vertex * prev; //用来存储结果路径上的上一个节点 
+	int info; //用来存储多余的数据 
 	int isdiscovered;
 } vertex;
 

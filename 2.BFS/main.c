@@ -29,7 +29,7 @@ freopen("output.txt", "w", stdout);
 	scanf("%s", &s2);
 	
 	src = findvertexbyname(metro, s1);
-    des = findvertexbyname(metro, s2);
+	des = findvertexbyname(metro, s2);
 	
 	printf("in BFS:\n");
 	BFS(metro, src, des);
@@ -52,7 +52,7 @@ void BFS(graph * metro, vertex * src, vertex * des)
 	vertex * que[300];
 	int head, tail;
 	head = tail = 0;
-	vertex * u, *v;
+	vertex * u;
 	edge * arc;
 	que[tail++] = src;
 	src->isdiscovered = 1;
@@ -62,12 +62,11 @@ void BFS(graph * metro, vertex * src, vertex * des)
 		if(u == des) break;
 		arc = u->firstedge;
 		while (arc) {
-			v = arc->adjtex;
-			if(v->isdiscovered == 0) {
-				v->isdiscovered = 1;
-				que[tail] = v;
-				tail = (tail + 1) % 300;
-				v->prev = u;
+			if (arc->adjtex->isdiscovered == 0) {
+				arc->adjtex->prev = u; //构建一条下一层子节点到当前节点的边 
+				que[tail] = arc->adjtex;
+				tail = (tail+1) % 300;
+				arc->adjtex->isdiscovered = 1;
 			}
 			arc = arc->nextedge;
 		}
